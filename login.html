@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0f1e">
+  <title>RPAS — 9º BPM | Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0a0f1e;
+      --bg2: #0d1428;
+      --panel: #111827;
+      --border: rgba(30,144,255,0.25);
+      --blue: #1e90ff;
+      --blue-dim: rgba(30,144,255,0.15);
+      --accent: #00d4ff;
+      --gold: #ffd700;
+      --text: #e8eaf0;
+      --text-dim: #8892a4;
+      --danger: #ff4757;
+      --success: #2ed573;
+      --font-head: 'Rajdhani', sans-serif;
+      --font-mono: 'Share Tech Mono', monospace;
+      --font-body: 'Exo 2', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Fundo animado com grade */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(30,144,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(30,144,255,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Radar animado de fundo */
+    .radar-bg {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      border: 1px solid rgba(30,144,255,0.05);
+      box-shadow:
+        0 0 0 80px rgba(30,144,255,0.02),
+        0 0 0 160px rgba(30,144,255,0.015),
+        0 0 0 240px rgba(30,144,255,0.01);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .radar-sweep {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 300px;
+      height: 300px;
+      margin: -300px 0 0 -300px;
+      border-radius: 50%;
+      background: conic-gradient(
+        from 0deg,
+        rgba(30,144,255,0.15),
+        transparent 60deg
+      );
+      animation: sweep 6s linear infinite;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.3;
+    }
+
+    @keyframes sweep { to { transform: rotate(360deg); } }
+
+    /* Container principal */
+    .login-container {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 420px;
+      padding: 20px;
+    }
+
+    /* Cabeçalho */
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .badge-pm {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--blue-dim);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 16px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+    }
+
+    .title-drone {
+      font-family: var(--font-head);
+      font-size: 42px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 6px;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .title-drone span {
+      color: var(--blue);
+    }
+
+    .subtitle {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 3px;
+      margin-top: 6px;
+      text-transform: uppercase;
+    }
+
+    .drone-icon {
+      font-size: 48px;
+      margin: 16px 0 8px;
+      filter: drop-shadow(0 0 20px var(--blue));
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    /* Card de login */
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow:
+        0 0 40px rgba(30,144,255,0.08),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--blue), transparent);
+    }
+
+    .card-title {
+      font-family: var(--font-head);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-dim);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-title i { color: var(--blue); }
+
+    /* Campos */
+    .field {
+      margin-bottom: 18px;
+    }
+
+    .field label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrap i {
+      position: absolute;
+      left: 14px;
+      color: var(--text-dim);
+      font-size: 14px;
+      transition: color 0.2s;
+    }
+
+    .input-wrap input {
+      width: 100%;
+      padding: 12px 14px 12px 40px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      transition: all 0.2s;
+      outline: none;
+    }
+
+    .input-wrap input:focus {
+      border-color: var(--blue);
+      background: rgba(30,144,255,0.08);
+      box-shadow: 0 0 0 3px rgba(30,144,255,0.1);
+    }
+
+    .input-wrap input:focus + .focus-line,
+    .input-wrap input:focus ~ i { color: var(--blue); }
+
+    /* Botão login */
+    .btn-login {
+      width: 100%;
+      padding: 14px;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font-head);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-login:hover {
+      background: #3ba0ff;
+      box-shadow: 0 4px 20px rgba(30,144,255,0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-login:active { transform: translateY(0); }
+
+    .btn-login:disabled {
+      background: rgba(30,144,255,0.3);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-login .spinner {
+      display: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Alerta de erro */
+    .alerta {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-top: 16px;
+      animation: slideIn 0.3s ease;
+    }
+
+    .alerta.erro {
+      display: flex;
+      background: rgba(255,71,87,0.1);
+      border: 1px solid rgba(255,71,87,0.3);
+      color: #ff6b7a;
+    }
+
+    .alerta.sucesso {
+      display: flex;
+      background: rgba(46,213,115,0.1);
+      border: 1px solid rgba(46,213,115,0.3);
+      color: var(--success);
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Rodapé */
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: rgba(136,146,164,0.5);
+      letter-spacing: 1px;
+    }
+
+    /* Tentativas */
+    .tentativas {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--danger);
+      text-align: center;
+      margin-top: 8px;
+      display: none;
+    }
+
+    /* Bloqueio */
+    .bloqueio {
+      text-align: center;
+      padding: 20px;
+      display: none;
+    }
+
+    .bloqueio i { font-size: 32px; color: var(--danger); margin-bottom: 12px; display: block; }
+    .bloqueio p { color: var(--text-dim); font-size: 14px; }
+    .bloqueio .countdown { font-family: var(--font-mono); font-size: 24px; color: var(--danger); margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<div class="radar-bg"></div>
+<div class="radar-sweep"></div>
+
+<div class="login-container">
+  <div class="header">
+    <div class="badge-pm">
+      <i class="fas fa-shield-alt"></i>
+      9º BATALHÃO DE POLÍCIA MILITAR
+    </div>
+    <div class="drone-icon">🚁</div>
+    <div class="title-drone">R<span>P</span>AS</div>
+    <div class="subtitle">Sistema de Controle de Aeronaves Remotamente Tripuladas</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      <i class="fas fa-lock"></i>
+      AUTENTICAÇÃO DO SISTEMA
+    </div>
+
+    <div id="formArea">
+      <div class="field">
+        <label>Usuário</label>
+        <div class="input-wrap">
+          <i class="fas fa-user"></i>
+          <input type="text" id="usuario" placeholder="Digite seu usuário" autocomplete="username" autofocus>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Senha</label>
+        <div class="input-wrap">
+          <i class="fas fa-key"></i>
+          <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password">
+        </div>
+      </div>
+
+      <button class="btn-login" id="btnLogin" onclick="fazerLogin()">
+        <span id="btnTxt"><i class="fas fa-sign-in-alt"></i> &nbsp;ACESSAR</span>
+        <div class="spinner" id="spinner"></div>
+      </button>
+
+      <div class="alerta erro" id="alertaErro">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="msgErro"></span>
+      </div>
+
+      <div class="tentativas" id="tentativas"></div>
+    </div>
+
+    <div class="bloqueio" id="bloqueioArea">
+      <i class="fas fa-lock"></i>
+      <p>Acesso bloqueado por excesso de tentativas.</p>
+      <div class="countdown" id="countdown"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    RPAS CONTROL SYSTEM v1.0 &nbsp;|&nbsp; 9º BPM &nbsp;|&nbsp;
+    <span id="relogio"></span>
+  </div>
+</div>
+
+<script>
+  const API_URL = '<?= ScriptApp.getService().getUrl() ?>';
+  let tentativas = 0;
+  const MAX_TENTATIVAS = 5;
+
+  // Relógio
+  function atualizarRelogio() {
+    const agora = new Date();
+    document.getElementById('relogio').textContent =
+      agora.toLocaleTimeString('pt-BR');
+  }
+  setInterval(atualizarRelogio, 1000);
+  atualizarRelogio();
+
+  // Enter para login
+  document.getElementById('senha').addEventListener('keypress', e => {
+    if (e.key === 'Enter') fazerLogin();
+  });
+  document.getElementById('usuario').addEventListener('keypress', e => {
+    if (e.key === 'Enter') document.getElementById('senha').focus();
+  });
+
+  async function fazerLogin() {
+    const usuario = document.getElementById('usuario').value.trim();
+    const senha   = document.getElementById('senha').value;
+    const btn     = document.getElementById('btnLogin');
+    const alertaErro = document.getElementById('alertaErro');
+    alertaErro.classList.remove('erro');
+
+    if (!usuario || !senha) {
+      mostrarErro('Preencha usuário e senha.');
+      return;
+    }
+
+    // Loading
+    btn.disabled = true;
+    document.getElementById('btnTxt').style.display = 'none';
+    document.getElementById('spinner').style.display = 'block';
+
+    try {
+      const resp = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao: 'login', usuario, senha })
+      });
+      const json = await resp.json();
+
+      if (json.ok && json.data && json.data.ok) {
+        // Sucesso
+        localStorage.setItem('drone_token',   json.data.data.token);
+        localStorage.setItem('drone_usuario', json.data.data.usuario);
+        localStorage.setItem('drone_perfil',  json.data.data.perfil);
+        tentativas = 0;
+        window.location.href = 'admin.html';
+      } else {
+        tentativas++;
+        const restantes = MAX_TENTATIVAS - tentativas;
+        if (tentativas >= MAX_TENTATIVAS) {
+          iniciarBloqueio();
+        } else {
+          mostrarErro((json.data && json.data.erro) || 'Credenciais inválidas.');
+          const el = document.getElementById('tentativas');
+          el.style.display = 'block';
+          el.textContent = `Tentativas restantes: ${restantes}`;
+        }
+      }
+    } catch (e) {
+      mostrarErro('Erro de conexão. Tente novamente.');
+    } finally {
+      btn.disabled = false;
+      document.getElementById('btnTxt').style.display = 'block';
+      document.getElementById('spinner').style.display = 'none';
+    }
+  }
+
+  function mostrarErro(msg) {
+    const el = document.getElementById('alertaErro');
+    document.getElementById('msgErro').textContent = msg;
+    el.style.display = 'none';
+    void el.offsetWidth;
+    el.classList.add('erro');
+  }
+
+  function iniciarBloqueio() {
+    document.getElementById('formArea').style.display = 'none';
+    document.getElementById('bloqueioArea').style.display = 'block';
+    let seg = 120;
+    const el = document.getElementById('countdown');
+    const iv = setInterval(() => {
+      el.textContent = `Aguarde ${seg}s`;
+      seg--;
+      if (seg < 0) {
+        clearInterval(iv);
+        tentativas = 0;
+        document.getElementById('formArea').style.display = 'block';
+        document.getElementById('bloqueioArea').style.display = 'none';
+        document.getElementById('tentativas').style.display = 'none';
+      }
+    }, 1000);
+  }
+</script>
+</body>
+</html>

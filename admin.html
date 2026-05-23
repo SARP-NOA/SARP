@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0a0f1e">
+  <title>RPAS — 9º BPM | Painel Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --bg: #0a0f1e;
+      --bg2: #080d1a;
+      --panel: #111827;
+      --panel2: #0f1623;
+      --border: rgba(30,144,255,0.18);
+      --blue: #1e90ff;
+      --blue-dim: rgba(30,144,255,0.1);
+      --accent: #00d4ff;
+      --green: #00e676;
+      --red: #ff5252;
+      --gold: #ffd700;
+      --orange: #ff8c00;
+      --text: #e8eaf0;
+      --text-dim: #8892a4;
+      --sidebar-w: 220px;
+      --font-head: 'Rajdhani', sans-serif;
+      --font-mono: 'Share Tech Mono', monospace;
+      --font-body: 'Exo 2', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(30,144,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(30,144,255,0.025) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 100;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar-logo {
+      padding: 20px 16px;
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .sidebar-logo .drone-icon { font-size: 32px; margin-bottom: 6px; display: block; }
+
+    .sidebar-logo .titulo {
+      font-family: var(--font-head);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: var(--text);
+    }
+
+    .sidebar-logo .sub {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      margin-top: 2px;
+    }
+
+    .nav-section {
+      padding: 16px 8px 8px;
+    }
+
+    .nav-label {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: rgba(136,146,164,0.5);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 0 10px;
+      margin-bottom: 4px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 13px;
+      color: var(--text-dim);
+      margin-bottom: 2px;
+      border: 1px solid transparent;
+      text-decoration: none;
+    }
+
+    .nav-item i { width: 16px; text-align: center; font-size: 14px; }
+
+    .nav-item:hover {
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+    }
+
+    .nav-item.ativo {
+      background: var(--blue-dim);
+      border-color: var(--border);
+      color: var(--blue);
+    }
+
+    .nav-item.ativo i { color: var(--blue); }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-sair {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: rgba(255,82,82,0.08);
+      border: 1px solid rgba(255,82,82,0.2);
+      color: var(--red);
+      cursor: pointer;
+      font-size: 13px;
+      width: 100%;
+      font-family: var(--font-body);
+      transition: all 0.2s;
+    }
+    .btn-sair:hover { background: rgba(255,82,82,0.15); }
+
+    /* Conteúdo principal */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      position: relative;
+      z-index: 5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Topbar */
+    .topbar {
+      background: rgba(10,15,30,0.97);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .topbar-title {
+      font-family: var(--font-head);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: var(--text);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .hora-top { font-family: var(--font-mono); font-size: 14px; color: var(--accent); }
+
+    .badge-alerta {
+      background: rgba(255,82,82,0.15);
+      border: 1px solid rgba(255,82,82,0.3);
+      color: var(--red);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .badge-alerta.visivel { display: flex; }
+
+    /* Conteúdo das abas */
+    .content {
+      padding: 24px;
+      flex: 1;
+    }
+
+    .aba-content { display: none; }
+    .aba-content.ativa { display: block; }
+
+    /* Cards de resumo */
+    .cards-resumo {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .card-resumo {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-resumo::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--card-color);
+    }
+
+    .card-resumo-icon {
+      font-size: 24px;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .card-resumo-valor {
+      font-family: var(--font-head);
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--card-color);
+      line-height: 1;
+    }
+
+    .card-resumo-label {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* Tabela */
+    .tabela-wrap {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .tabela-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .tabela-title {
+      font-family: var(--font-head);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tabela-title i { color: var(--blue); }
+
+    .btn-add {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font-head);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-add:hover { background: #3ba0ff; box-shadow: 0 4px 16px rgba(30,144,255,0.3); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 12px 14px;
+      font-size: 13px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-ativa    { background: rgba(0,230,118,0.12); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+    .badge-inativa  { background: rgba(136,146,164,0.1); color: var(--text-dim); border: 1px solid rgba(136,146,164,0.2); }
+    .badge-normal   { background: rgba(0,230,118,0.1); color: var(--green); }
+    .badge-atencao  { background: rgba(255,215,0,0.1); color: var(--gold); }
+    .badge-urgente  { background: rgba(255,140,0,0.1); color: var(--orange); }
+    .badge-critico  { background: rgba(255,82,82,0.1); color: var(--red); }
+
+    /* Barra de ciclos */
+    .ciclos-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bar-track {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+      overflow: hidden;
+      min-width: 80px;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.6s ease;
+    }
+
+    .bar-txt {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      white-space: nowrap;
+      color: var(--text-dim);
+    }
+
+    /* Ações de tabela */
+    .tbl-actions { display: flex; gap: 6px; }
+
+    .btn-tbl {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      color: var(--text-dim);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+
+    .btn-tbl:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+    .btn-tbl.danger:hover { background: rgba(255,82,82,0.1); color: var(--red); border-color: rgba(255,82,82,0.3); }
+    .btn-tbl.success:hover { background: rgba(0,230,118,0.1); color: var(--green); border-color: rgba(0,230,118,0.3); }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-overlay.ativo { display: flex; }
+
+    .modal {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .modal-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.02);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .modal-title {
+      font-family: var(--font-head);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 18px;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover { background: rgba(255,82,82,0.1); color: var(--red); }
+
+    .modal-body { padding: 20px; }
+
+    .campo-modal { margin-bottom: 16px; }
+    .campo-modal label {
+      display: block;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .campo-modal input,
+    .campo-modal select,
+    .campo-modal textarea {
+      width: 100%;
+      padding: 11px 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 13px;
+      transition: all 0.2s;
+      outline: none;
+      appearance: none;
+    }
+
+    .campo-modal input:focus,
+    .campo-modal select:focus {
+      border-color: var(--blue);
+      background: rgba(30,144,255,0.06);
+    }
+
+    .modal-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .btn-cancelar {
+      padding: 10px 20px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--text-dim);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .btn-cancelar:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+
+    .btn-salvar {
+      padding: 10px 24px;
+      background: var(--blue);
+      border: none;
+      color: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: var(--font-head);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+
+    .btn-salvar:hover { background: #3ba0ff; box-shadow: 0 4px 16px rgba(30,144,255,0.3); }
+
+    /* Alertas visuais */
+    .alertas-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .alerta-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid;
+      animation: alertaEntra 0.3s ease;
+    }
+
+    @keyframes alertaEntra {
+      from { opacity: 0; transform: translateX(-10px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .alerta-item.ATENCAO { background: rgba(255,215,0,0.06); border-color: rgba(255,215,0,0.25); }
+    .alerta-item.URGENTE { background: rgba(255,140,0,0.06); border-color: rgba(255,140,0,0.25); }
+    .alerta-item.CRITICO { background: rgba(255,82,82,0.06); border-color: rgba(255,82,82,0.3); }
+
+    .alerta-icone { font-size: 24px; flex-shrink: 0; }
+    .alerta-info { flex: 1; }
+    .alerta-serial { font-family: var(--font-mono); font-size: 13px; font-weight: 600; }
+    .alerta-detalhe { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+    .alerta-nivel { font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+
+    .alerta-item.ATENCAO .alerta-nivel { color: var(--gold); }
+    .alerta-item.URGENTE .alerta-nivel { color: var(--orange); }
+    .alerta-item.CRITICO .alerta-nivel { color: var(--red); }
+
+    /* Vazio */
+    .vazio {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-dim);
+    }
+    .vazio i { font-size: 32px; margin-bottom: 12px; display: block; opacity: 0.4; }
+    .vazio p { font-family: var(--font-mono); font-size: 12px; letter-spacing: 1px; }
+
+    /* Registros recentes */
+    .registros-lista {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .registro-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+
+    .registro-item:hover { background: rgba(255,255,255,0.04); }
+
+    .registro-tipo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .registro-tipo.entrada { background: rgba(0,230,118,0.1); }
+    .registro-tipo.saida   { background: rgba(255,82,82,0.1); }
+
+    .registro-info { flex: 1; }
+    .registro-titulo { font-size: 13px; color: var(--text); }
+    .registro-sub    { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+    .registro-hora   { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+
+    /* Responsivo mobile */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.aberta { transform: translateX(0); }
+      .main { margin-left: 0; }
+      .cards-resumo { grid-template-columns: 1fr 1fr; }
+      .menu-toggle {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .overlay-mobile {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 99;
+      }
+      .overlay-mobile.ativo { display: block; }
+    }
+
+    .menu-toggle { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <span class="drone-icon">🚁</span>
+    <div class="titulo">RPAS</div>
+    <div class="sub">9º BPM · PAINEL ADMIN</div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Dashboard</div>
+    <a class="nav-item ativo" data-aba="dashboard" onclick="irAba('dashboard', this)">
+      <i class="fas fa-tachometer-alt"></i> Dashboard
+    </a>
+    <a class="nav-item" data-aba="alertas" onclick="irAba('alertas', this)" id="nav-alertas">
+      <i class="fas fa-bell"></i> Alertas de Baterias
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Cadastros</div>
+    <a class="nav-item" data-aba="aeronaves" onclick="irAba('aeronaves', this)">
+      <i class="fas fa-helicopter"></i> Aeronaves
+    </a>
+    <a class="nav-item" data-aba="baterias" onclick="irAba('baterias', this)">
+      <i class="fas fa-battery-three-quarters"></i> Baterias
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Registros</div>
+    <a class="nav-item" data-aba="entradas" onclick="irAba('entradas', this)">
+      <i class="fas fa-plane-departure"></i> Entradas (Pré-voo)
+    </a>
+    <a class="nav-item" data-aba="saidas" onclick="irAba('saidas', this)">
+      <i class="fas fa-plane-arrival"></i> Saídas (Pós-voo)
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <a class="nav-item" href="menu.html">
+      <i class="fas fa-home"></i> Página Inicial
+    </a>
+  </div>
+
+  <div class="sidebar-footer">
+    <button class="btn-sair" onclick="sair()">
+      <i class="fas fa-sign-out-alt"></i> Sair
+    </button>
+  </div>
+</div>
+
+<!-- Overlay mobile -->
+<div class="overlay-mobile" id="overlayMobile" onclick="fecharSidebar()"></div>
+
+<!-- Conteúdo principal -->
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="topbar-title" id="topbarTitle">🚁 DASHBOARD</div>
+    </div>
+    <div class="topbar-right">
+      <div class="badge-alerta" id="badgeAlerta" onclick="irAba('alertas', null)">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="qtdAlertasBadge">0</span> alertas
+      </div>
+      <div class="hora-top" id="hora">--:--:--</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="aba-content ativa" id="aba-dashboard">
+      <div class="cards-resumo" id="cardsResumo">
+        <div class="card-resumo" style="--card-color: var(--blue)">
+          <span class="card-resumo-icon">🚁</span>
+          <div class="card-resumo-valor" id="cr-aeronaves">—</div>
+          <div class="card-resumo-label">Aeronaves Ativas</div>
+        </div>
+        <div class="card-resumo" style="--card-color: var(--green)">
+          <span class="card-resumo-icon">✈️</span>
+          <div class="card-resumo-valor" id="cr-emvoo">—</div>
+          <div class="card-resumo-label">Em Voo Hoje</div>
+        </div>
+        <div class="card-resumo" style="--card-color: var(--gold)">
+          <span class="card-resumo-icon">🔋</span>
+          <div class="card-resumo-valor" id="cr-baterias">—</div>
+          <div class="card-resumo-label">Baterias Cadastradas</div>
+        </div>
+        <div class="card-resumo" style="--card-color: var(--red)">
+          <span class="card-resumo-icon">⚠️</span>
+          <div class="card-resumo-valor" id="cr-alertas">—</div>
+          <div class="card-resumo-label">Baterias em Alerta</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="tabela-wrap">
+          <div class="tabela-header">
+            <div class="tabela-title"><i class="fas fa-history"></i> Últimas Entradas</div>
+          </div>
+          <div class="registros-lista" id="listaEntradas" style="padding:12px;"></div>
+        </div>
+        <div class="tabela-wrap">
+          <div class="tabela-header">
+            <div class="tabela-title"><i class="fas fa-history"></i> Últimas Saídas</div>
+          </div>
+          <div class="registros-lista" id="listaSaidas" style="padding:12px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALERTAS -->
+    <div class="aba-content" id="aba-alertas">
+      <div class="tabela-wrap">
+        <div class="tabela-header">
+          <div class="tabela-title"><i class="fas fa-bell"></i> Baterias em Alerta</div>
+          <button class="btn-add" onclick="verificarAlertas()" style="background:var(--gold);color:#000;">
+            <i class="fas fa-sync"></i> Verificar Agora
+          </button>
+        </div>
+        <div class="alertas-lista" id="alertasLista" style="padding:16px;"></div>
+      </div>
+    </div>
+
+    <!-- AERONAVES -->
+    <div class="aba-content" id="aba-aeronaves">
+      <div class="tabela-wrap">
+        <div class="tabela-header">
+          <div class="tabela-title"><i class="fas fa-helicopter"></i> Aeronaves Cadastradas</div>
+          <button class="btn-add" onclick="abrirModalAeronave()">
+            <i class="fas fa-plus"></i> Nova Aeronave
+          </button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Prefixo / Nome</th>
+                <th>Modelo</th>
+                <th>Nº Série</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyAeronaves">
+              <tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:30px;">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- BATERIAS -->
+    <div class="aba-content" id="aba-baterias">
+      <div class="tabela-wrap">
+        <div class="tabela-header">
+          <div class="tabela-title"><i class="fas fa-battery-three-quarters"></i> Baterias</div>
+          <button class="btn-add" onclick="abrirModalBateria()">
+            <i class="fas fa-plus"></i> Nova Bateria
+          </button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Nº Série</th>
+                <th>Modelo Aeronave</th>
+                <th>Ciclos de Voo</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyBaterias">
+              <tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:30px;">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ENTRADAS -->
+    <div class="aba-content" id="aba-entradas">
+      <div class="tabela-wrap">
+        <div class="tabela-header">
+          <div class="tabela-title"><i class="fas fa-plane-departure"></i> Registros de Entrada (Pré-voo)</div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Data/Hora</th>
+                <th>Aeronave</th>
+                <th>Piloto</th>
+                <th>Missão</th>
+                <th>Bateria</th>
+                <th>Local</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyEntradas">
+              <tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:30px;">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAÍDAS -->
+    <div class="aba-content" id="aba-saidas">
+      <div class="tabela-wrap">
+        <div class="tabela-header">
+          <div class="tabela-title"><i class="fas fa-plane-arrival"></i> Registros de Saída (Pós-voo)</div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Data/Hora</th>
+                <th>Aeronave</th>
+                <th>Piloto</th>
+                <th>Tempo Voo</th>
+                <th>Avaliação</th>
+                <th>Anomalias</th>
+              </tr>
+            </thead>
+            <tbody id="tbodySaidas">
+              <tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:30px;">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- Modal Aeronave -->
+<div class="modal-overlay" id="modalAeronave">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalAeronaveTitle">Nova Aeronave</div>
+      <button class="modal-close" onclick="fecharModal('modalAeronave')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ma-id">
+      <div class="campo-modal">
+        <label>Prefixo / Designação <span style="color:var(--red)">*</span></label>
+        <input type="text" id="ma-prefixo" placeholder="Ex: DRONE-01, RPV-BPM-01">
+      </div>
+      <div class="campo-modal">
+        <label>Modelo <span style="color:var(--red)">*</span></label>
+        <select id="ma-modelo">
+          <option value="">— Selecione o modelo —</option>
+          <option value="DJI MAVIC">DJI Mavic (limite: 300 ciclos)</option>
+          <option value="DJI MATRICE">DJI Matrice (limite: 400 ciclos)</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+      <div class="campo-modal">
+        <label>Número de Série</label>
+        <input type="text" id="ma-serial" placeholder="Nº de série do fabricante">
+      </div>
+      <div class="campo-modal">
+        <label>Descrição / Observações</label>
+        <textarea id="ma-descricao" placeholder="Informações adicionais..." style="min-height:70px;"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancelar" onclick="fecharModal('modalAeronave')">Cancelar</button>
+      <button class="btn-salvar" onclick="salvarAeronave()">SALVAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Bateria -->
+<div class="modal-overlay" id="modalBateria">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Nova Bateria</div>
+      <button class="modal-close" onclick="fecharModal('modalBateria')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="campo-modal">
+        <label>Nº de Série da Bateria <span style="color:var(--red)">*</span></label>
+        <input type="text" id="mb-serial" placeholder="Nº de série ou código interno">
+      </div>
+      <div class="campo-modal">
+        <label>Modelo de Aeronave Compatível <span style="color:var(--red)">*</span></label>
+        <select id="mb-modelo">
+          <option value="">— Selecione —</option>
+          <option value="DJI MAVIC">DJI Mavic (limite padrão: 300 ciclos)</option>
+          <option value="DJI MATRICE">DJI Matrice (limite padrão: 400 ciclos)</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+      <div class="campo-modal">
+        <label>Limite de Ciclos Personalizado</label>
+        <input type="number" id="mb-limite" placeholder="Deixe vazio para usar o padrão do modelo" min="1">
+      </div>
+      <div class="campo-modal">
+        <label>Ciclos Iniciais (se bateria usada)</label>
+        <input type="number" id="mb-ciclos" placeholder="0" min="0">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancelar" onclick="fecharModal('modalBateria')">Cancelar</button>
+      <button class="btn-salvar" onclick="salvarBateria()">SALVAR</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_URL = '<?= ScriptApp.getService().getUrl() ?>';
+  const token   = localStorage.getItem('drone_token') || '';
+
+  // ── Relógio ──────────────────────────────
+  function tick() { document.getElementById('hora').textContent = new Date().toLocaleTimeString('pt-BR'); }
+  setInterval(tick, 1000); tick();
+
+  // ── Roteamento de abas ───────────────────
+  function irAba(aba, el) {
+    document.querySelectorAll('.aba-content').forEach(a => a.classList.remove('ativa'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('ativo'));
+
+    const conteudo = document.getElementById(`aba-${aba}`);
+    if (conteudo) conteudo.classList.add('ativa');
+    if (el) el.classList.add('ativo');
+
+    const titulos = {
+      dashboard: '🚁 DASHBOARD',
+      alertas:   '🔔 ALERTAS DE BATERIAS',
+      aeronaves: '🚁 AERONAVES',
+      baterias:  '🔋 BATERIAS',
+      entradas:  '✅ ENTRADAS (PRÉ-VOO)',
+      saidas:    '🛬 SAÍDAS (PÓS-VOO)'
+    };
+    document.getElementById('topbarTitle').textContent = titulos[aba] || 'RPAS ADMIN';
+
+    fecharSidebar();
+    carregarAba(aba);
+  }
+
+  async function carregarAba(aba) {
+    switch(aba) {
+      case 'dashboard': await carregarDashboard(); break;
+      case 'alertas':   await carregarAlertas();   break;
+      case 'aeronaves': await carregarAeronaves();  break;
+      case 'baterias':  await carregarBaterias();   break;
+      case 'entradas':  await carregarEntradas();   break;
+      case 'saidas':    await carregarSaidas();     break;
+    }
+  }
+
+  // ── Dashboard ────────────────────────────
+  async function carregarDashboard() {
+    try {
+      const resp = await fetch(`${API_URL}?action=getDashboard`);
+      const json = await resp.json();
+      if (!json.ok) return;
+      const d = json.data;
+
+      document.getElementById('cr-aeronaves').textContent = d.resumo.aeronavesAtivas;
+      document.getElementById('cr-emvoo').textContent     = d.resumo.aeronavesEmVoo;
+      document.getElementById('cr-baterias').textContent  = d.resumo.totalBaterias;
+      document.getElementById('cr-alertas').textContent   = d.resumo.bateriasAlerta;
+
+      if (d.resumo.bateriasAlerta > 0) {
+        const badge = document.getElementById('badgeAlerta');
+        document.getElementById('qtdAlertasBadge').textContent = d.resumo.bateriasAlerta;
+        badge.classList.add('visivel');
+      }
+
+      renderRegistros('listaEntradas', d.ultimasEntradas, 'entrada');
+      renderRegistros('listaSaidas',   d.ultimasSaidas,   'saida');
+    } catch(e) { console.error(e); }
+  }
+
+  function renderRegistros(containerId, lista, tipo) {
+    const el  = document.getElementById(containerId);
+    if (!lista || lista.length === 0) {
+      el.innerHTML = `<div class="vazio"><i class="fas fa-inbox"></i><p>Nenhum registro</p></div>`;
+      return;
+    }
+    el.innerHTML = lista.slice(0,5).map(r => `
+      <div class="registro-item">
+        <div class="registro-tipo ${tipo}">${tipo === 'entrada' ? '✅' : '🛬'}</div>
+        <div class="registro-info">
+          <div class="registro-titulo">${r.aeronave_id || '—'} · ${r.piloto || '—'}</div>
+          <div class="registro-sub">${r.missao || r.resultado_missao || '—'}</div>
+        </div>
+        <div class="registro-hora">${r.timestamp ? new Date(r.timestamp).toLocaleString('pt-BR',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}) : '—'}</div>
+      </div>
+    `).join('');
+  }
+
+  // ── Alertas ──────────────────────────────
+  async function carregarAlertas() {
+    const el = document.getElementById('alertasLista');
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-dim);">Carregando...</div>';
+    try {
+      const resp = await fetch(`${API_URL}?action=getBateriasAlerta`);
+      const json = await resp.json();
+      const lista = json.data || [];
+
+      if (lista.length === 0) {
+        el.innerHTML = `<div class="vazio"><i class="fas fa-check-circle" style="color:var(--green);opacity:1;"></i><p>Nenhuma bateria em alerta</p></div>`;
+        return;
+      }
+
+      const icones = { CRITICO: '🔴', URGENTE: '🟠', ATENCAO: '🟡' };
+      el.innerHTML = lista.map(a => `
+        <div class="alerta-item ${a.nivel}">
+          <div class="alerta-icone">${icones[a.nivel] || '⚠️'}</div>
+          <div class="alerta-info">
+            <div class="alerta-serial">🔋 ${a.serial}</div>
+            <div class="alerta-detalhe">
+              ${a.modelo} · ${a.ciclos}/${a.limite} ciclos · <strong>${a.restantes} restantes</strong>
+            </div>
+          </div>
+          <div class="alerta-nivel">${a.nivel}</div>
+        </div>
+      `).join('');
+    } catch(e) { el.innerHTML = '<div class="vazio"><p>Erro ao carregar alertas.</p></div>'; }
+  }
+
+  async function verificarAlertas() {
+    try {
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ acao: 'verificarAlertas', token })
+      });
+      await carregarAlertas();
+    } catch(e) {}
+  }
+
+  // ── Aeronaves ────────────────────────────
+  async function carregarAeronaves() {
+    const tbody = document.getElementById('tbodyAeronaves');
+    try {
+      const resp = await fetch(`${API_URL}?action=getAeronaves`);
+      const json = await resp.json();
+      const lista = json.data || [];
+
+      if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:30px;">Nenhuma aeronave cadastrada</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = lista.map(a => `
+        <tr>
+          <td><strong>${a.prefixo || '—'}</strong></td>
+          <td>${a.modelo || '—'}</td>
+          <td><span style="font-family:var(--font-mono);font-size:11px;">${a.serial || '—'}</span></td>
+          <td><span class="badge ${a.status === 'ATIVA' ? 'badge-ativa' : 'badge-inativa'}">${a.status}</span></td>
+          <td>
+            <div class="tbl-actions">
+              <button class="btn-tbl" onclick="editarAeronave('${a.id}')" title="Editar"><i class="fas fa-pencil"></i></button>
+              <button class="btn-tbl danger" onclick="desativarAeronave('${a.id}')" title="Desativar"><i class="fas fa-power-off"></i></button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    } catch(e) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--red);padding:20px;">Erro ao carregar.</td></tr>`; }
+  }
+
+  function abrirModalAeronave() {
+    document.getElementById('ma-id').value = '';
+    document.getElementById('ma-prefixo').value = '';
+    document.getElementById('ma-modelo').value = '';
+    document.getElementById('ma-serial').value = '';
+    document.getElementById('ma-descricao').value = '';
+    document.getElementById('modalAeronaveTitle').textContent = 'Nova Aeronave';
+    document.getElementById('modalAeronave').classList.add('ativo');
+  }
+
+  async function salvarAeronave() {
+    const prefixo = document.getElementById('ma-prefixo').value.trim();
+    const modelo  = document.getElementById('ma-modelo').value;
+    if (!prefixo || !modelo) return alert('Prefixo e modelo são obrigatórios.');
+
+    try {
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          acao: 'addAeronave',
+          token,
+          prefixo,
+          modelo,
+          serial:    document.getElementById('ma-serial').value.trim(),
+          descricao: document.getElementById('ma-descricao').value.trim()
+        })
+      });
+      fecharModal('modalAeronave');
+      await carregarAeronaves();
+    } catch(e) { alert('Erro ao salvar aeronave.'); }
+  }
+
+  async function desativarAeronave(id) {
+    if (!confirm('Desativar esta aeronave?')) return;
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'desativarAeronave', token, id })
+    });
+    await carregarAeronaves();
+  }
+
+  function editarAeronave(id) { /* Implementar conforme necessidade */ }
+
+  // ── Baterias ─────────────────────────────
+  async function carregarBaterias() {
+    const tbody = document.getElementById('tbodyBaterias');
+    try {
+      const resp = await fetch(`${API_URL}?action=getBaterias`);
+      const json = await resp.json();
+      const lista = json.data || [];
+
+      if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:30px;">Nenhuma bateria cadastrada</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = lista.map(b => {
+        const pct  = Math.min(100, Math.round((b.ciclos / b.limite) * 100));
+        const cor  = b.nivel === 'CRITICO' ? 'var(--red)' : b.nivel === 'URGENTE' ? 'var(--orange)' : b.nivel === 'ATENCAO' ? 'var(--gold)' : 'var(--green)';
+        const cls  = `badge-${(b.nivel || 'normal').toLowerCase()}`;
+        return `
+          <tr>
+            <td><strong style="font-family:var(--font-mono);">${b.serial}</strong></td>
+            <td>${b.modelo_aeronave || '—'}</td>
+            <td>
+              <div class="ciclos-bar">
+                <div class="bar-track">
+                  <div class="bar-fill" style="width:${pct}%;background:${cor};"></div>
+                </div>
+                <span class="bar-txt">${b.ciclos}/${b.limite}</span>
+              </div>
+            </td>
+            <td><span class="badge ${cls}">${b.nivel || 'NORMAL'}</span></td>
+            <td>
+              <div class="tbl-actions">
+                <button class="btn-tbl success" onclick="resetarCiclos('${b.serial}')" title="Resetar ciclos"><i class="fas fa-redo"></i></button>
+                <button class="btn-tbl danger" onclick="desativarBateria('${b.serial}')" title="Desativar"><i class="fas fa-ban"></i></button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } catch(e) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--red);padding:20px;">Erro ao carregar.</td></tr>`; }
+  }
+
+  function abrirModalBateria() {
+    document.getElementById('mb-serial').value = '';
+    document.getElementById('mb-modelo').value = '';
+    document.getElementById('mb-limite').value = '';
+    document.getElementById('mb-ciclos').value = '';
+    document.getElementById('modalBateria').classList.add('ativo');
+  }
+
+  async function salvarBateria() {
+    const serial = document.getElementById('mb-serial').value.trim();
+    const modelo = document.getElementById('mb-modelo').value;
+    if (!serial || !modelo) return alert('Série e modelo são obrigatórios.');
+
+    try {
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          acao: 'addBateria',
+          token,
+          serial,
+          modelo_aeronave: modelo,
+          limite_personalizado: parseInt(document.getElementById('mb-limite').value) || null,
+          ciclos_iniciais:      parseInt(document.getElementById('mb-ciclos').value) || 0
+        })
+      });
+      fecharModal('modalBateria');
+      await carregarBaterias();
+    } catch(e) { alert('Erro ao salvar bateria.'); }
+  }
+
+  async function desativarBateria(serial) {
+    if (!confirm(`Desativar bateria ${serial}?`)) return;
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'desativarBateria', token, serial })
+    });
+    await carregarBaterias();
+  }
+
+  async function resetarCiclos(serial) {
+    const motivo = prompt(`Motivo para resetar os ciclos da bateria ${serial}:`);
+    if (!motivo) return;
+    await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'resetarCiclosBateria', token, serial, motivo })
+    });
+    await carregarBaterias();
+  }
+
+  // ── Entradas e Saídas ────────────────────
+  async function carregarEntradas() {
+    const tbody = document.getElementById('tbodyEntradas');
+    try {
+      const resp = await fetch(`${API_URL}?action=getEntradas&limit=30`);
+      const json = await resp.json();
+      const lista = json.data || [];
+
+      tbody.innerHTML = lista.length === 0
+        ? `<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:30px;">Nenhum registro</td></tr>`
+        : lista.map(r => `
+            <tr>
+              <td><span style="font-family:var(--font-mono);font-size:11px;">${r.timestamp ? new Date(r.timestamp).toLocaleString('pt-BR') : '—'}</span></td>
+              <td>${r.aeronave_id || '—'}</td>
+              <td>${r.piloto || '—'}</td>
+              <td>${r.missao || '—'}</td>
+              <td><span style="font-family:var(--font-mono);font-size:11px;">${r.bateria_serial || '—'}</span></td>
+              <td>${r.local || '—'}</td>
+            </tr>
+          `).join('');
+    } catch(e) {}
+  }
+
+  async function carregarSaidas() {
+    const tbody = document.getElementById('tbodySaidas');
+    try {
+      const resp = await fetch(`${API_URL}?action=getSaidas&limit=30`);
+      const json = await resp.json();
+      const lista = json.data || [];
+
+      tbody.innerHTML = lista.length === 0
+        ? `<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:30px;">Nenhum registro</td></tr>`
+        : lista.map(r => {
+            const av = { Excelente: '🟢', Bom: '🔵', Regular: '🟡', Ruim: '🔴' };
+            return `
+              <tr>
+                <td><span style="font-family:var(--font-mono);font-size:11px;">${r.timestamp ? new Date(r.timestamp).toLocaleString('pt-BR') : '—'}</span></td>
+                <td>${r.aeronave_id || '—'}</td>
+                <td>${r.piloto || '—'}</td>
+                <td>${r.tempo_voo ? r.tempo_voo + ' min' : '—'}</td>
+                <td>${(av[r.avaliacao] || '') + ' ' + (r.avaliacao || '—')}</td>
+                <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.anomalias || '—'}</td>
+              </tr>
+            `;
+          }).join('');
+    } catch(e) {}
+  }
+
+  // ── Modais ───────────────────────────────
+  function fecharModal(id) { document.getElementById(id).classList.remove('ativo'); }
+
+  // Fecha modal clicando fora
+  document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('ativo'); });
+  });
+
+  // ── Sidebar mobile ───────────────────────
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('aberta');
+    document.getElementById('overlayMobile').classList.toggle('ativo');
+  }
+  function fecharSidebar() {
+    document.getElementById('sidebar').classList.remove('aberta');
+    document.getElementById('overlayMobile').classList.remove('ativo');
+  }
+
+  function sair() {
+    localStorage.removeItem('drone_token');
+    localStorage.removeItem('drone_usuario');
+    localStorage.removeItem('drone_perfil');
+    window.location.href = 'login.html';
+  }
+
+  // ── Deep link por hash ───────────────────
+  function verificarHash() {
+    const h = window.location.hash.replace('#','');
+    if (h) {
+      const navEl = document.querySelector(`[data-aba="${h}"]`);
+      irAba(h, navEl);
+    }
+  }
+
+  // ── Init ─────────────────────────────────
+  verificarHash();
+  carregarDashboard();
+  setInterval(carregarDashboard, 60000);
+</script>
+</body>
+</html>
