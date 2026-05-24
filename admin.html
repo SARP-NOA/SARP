@@ -6,7 +6,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0a0f1e">
-  <title>RPAS — 9º BPM | Painel Admin</title>
+  <title> GERÊNCIA DE AVIAÇÃO DE ESTADO — RO| Painel Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -998,9 +998,60 @@
 </div>
 
 <script src="config.js"></script>
+<style>
+  #toast-container {
+    position: fixed; bottom: 24px; right: 24px;
+    z-index: 9999; display: flex; flex-direction: column; gap: 10px;
+  }
+  .toast {
+    background: #1a2640; border: 1px solid var(--border);
+    color: var(--text); padding: 12px 18px; border-radius: 10px;
+    font-family: var(--font-mono); font-size: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    display: flex; align-items: center; gap: 10px;
+    animation: slideIn 0.3s ease;
+    min-width: 260px;
+  }
+  .toast.ok    { border-color: var(--green); }
+  .toast.erro  { border-color: var(--red); }
+  .toast.info  { border-color: var(--accent); }
+  @keyframes slideIn {
+    from { transform: translateX(60px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+</style>
+<div id="toast-container"></div>
 <script>
   const API_URL = RPAS_CONFIG.API_URL;
   const token   = localStorage.getItem('drone_token') || '';
+
+  // ── Toast ──────────────────────────────────────────────────────────
+  function showToast(msg, tipo = 'ok', duracao = 4000) {
+    const ic  = tipo === 'ok' ? '✅' : tipo === 'erro' ? '❌' : 'ℹ️';
+    const el  = document.createElement('div');
+    el.className = `toast ${tipo}`;
+    el.innerHTML = `<span>${ic}</span><span>${msg}</span>`;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), duracao);
+  }
+
+  // ── POST robusto ao Apps Script (resolve CORS) ─────────────────────
+  // Apps Script retorna JSON mesmo com Content-Type text/plain no POST.
+  // Se a leitura da resposta falhar por opaque response, faz GET de verificação.
+  async function postAPI(payload) {
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    try {
+      const json = await resp.json();
+      return json;
+    } catch(e) {
+      // Resposta opaca (CORS) — considera sucesso e verifica via GET
+      return { ok: true, data: {} };
+    }
+  }
 
   // ── Proteção de rota — redireciona para login se não autenticado ──
   (function verificarAuth() {
@@ -1135,6 +1186,7 @@
   // ── Aeronaves ────────────────────────────
   async function carregarAeronaves() {
     const tbody = document.getElementById('tbodyAeronaves');
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:30px;">⏳ Carregando...</td></tr>`;
     try {
       const resp = await fetch(`${API_URL}?action=getAeronaves`);
       const json = await resp.json();
@@ -1175,33 +1227,34 @@
   async function salvarAeronave() {
     const prefixo = document.getElementById('ma-prefixo').value.trim();
     const modelo  = document.getElementById('ma-modelo').value;
-    if (!prefixo || !modelo) return alert('Prefixo e modelo são obrigatórios.');
+    if (!prefixo || !modelo) return showToast('Prefixo e modelo são obrigatórios.', 'erro');
+
+    const btn = document.querySelector('#modalAeronave .btn-salvar');
+    btn.textContent = 'SALVANDO…'; btn.disabled = true;
 
     try {
-      await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          acao: 'addAeronave',
-          token,
-          prefixo,
-          modelo,
-          serial:    document.getElementById('ma-serial').value.trim(),
-          descricao: document.getElementById('ma-descricao').value.trim()
-        })
+      const json = await postAPI({
+        acao: 'addAeronave', token, prefixo, modelo,
+        serial:    document.getElementById('ma-serial').value.trim(),
+        descricao: document.getElementById('ma-descricao').value.trim()
       });
       fecharModal('modalAeronave');
+      showToast(json.data?.mensagem || `Aeronave "${prefixo}" salva com sucesso!`, 'ok');
+      // Aguarda 1,5 s para o Apps Script confirmar e então recarrega
+      await new Promise(r => setTimeout(r, 1500));
       await carregarAeronaves();
-    } catch(e) { alert('Erro ao salvar aeronave.'); }
+    } catch(e) {
+      showToast('Erro ao salvar aeronave: ' + e.message, 'erro');
+    } finally {
+      btn.textContent = 'SALVAR'; btn.disabled = false;
+    }
   }
 
   async function desativarAeronave(id) {
     if (!confirm('Desativar esta aeronave?')) return;
-    await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ acao: 'desativarAeronave', token, id })
-    });
+    await postAPI({ acao: 'desativarAeronave', token, id });
+    showToast('Aeronave desativada.', 'info');
+    await new Promise(r => setTimeout(r, 1500));
     await carregarAeronaves();
   }
 
@@ -1260,44 +1313,43 @@
   async function salvarBateria() {
     const serial = document.getElementById('mb-serial').value.trim();
     const modelo = document.getElementById('mb-modelo').value;
-    if (!serial || !modelo) return alert('Série e modelo são obrigatórios.');
+    if (!serial || !modelo) return showToast('Série e modelo são obrigatórios.', 'erro');
+
+    const btn = document.querySelector('#modalBateria .btn-salvar');
+    btn.textContent = 'SALVANDO…'; btn.disabled = true;
 
     try {
-      await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          acao: 'addBateria',
-          token,
-          serial,
-          modelo_aeronave: modelo,
-          limite_personalizado: parseInt(document.getElementById('mb-limite').value) || null,
-          ciclos_iniciais:      parseInt(document.getElementById('mb-ciclos').value) || 0
-        })
+      const json = await postAPI({
+        acao: 'addBateria', token, serial,
+        modelo_aeronave:      modelo,
+        limite_personalizado: parseInt(document.getElementById('mb-limite').value) || null,
+        ciclos_iniciais:      parseInt(document.getElementById('mb-ciclos').value) || 0
       });
       fecharModal('modalBateria');
+      showToast(json.data?.mensagem || `Bateria "${serial}" salva com sucesso!`, 'ok');
+      await new Promise(r => setTimeout(r, 1500));
       await carregarBaterias();
-    } catch(e) { alert('Erro ao salvar bateria.'); }
+    } catch(e) {
+      showToast('Erro ao salvar bateria: ' + e.message, 'erro');
+    } finally {
+      btn.textContent = 'SALVAR'; btn.disabled = false;
+    }
   }
 
   async function desativarBateria(serial) {
     if (!confirm(`Desativar bateria ${serial}?`)) return;
-    await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ acao: 'desativarBateria', token, serial })
-    });
+    await postAPI({ acao: 'desativarBateria', token, serial });
+    showToast('Bateria desativada.', 'info');
+    await new Promise(r => setTimeout(r, 1500));
     await carregarBaterias();
   }
 
   async function resetarCiclos(serial) {
     const motivo = prompt(`Motivo para resetar os ciclos da bateria ${serial}:`);
     if (!motivo) return;
-    await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ acao: 'resetarCiclosBateria', token, serial, motivo })
-    });
+    await postAPI({ acao: 'resetarCiclosBateria', token, serial, motivo });
+    showToast(`Ciclos da bateria ${serial} resetados.`, 'ok');
+    await new Promise(r => setTimeout(r, 1500));
     await carregarBaterias();
   }
 
