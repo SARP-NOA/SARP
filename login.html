@@ -6,7 +6,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0a0f1e">
-  <title>RPAS — 9º BPM | Login</title>
+  <title>RPAS — GAE/RO | Login</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -250,6 +250,21 @@
     .input-wrap input:focus ~ i { color: var(--blue); }
 
     /* Botão login */
+    .toggle-senha {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-dim);
+      font-size: 15px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s;
+    }
+    .toggle-senha:hover { color: var(--blue); }
+
     .btn-login {
       width: 100%;
       padding: 14px;
@@ -368,11 +383,11 @@
   <div class="header">
     <div class="badge-pm">
       <i class="fas fa-shield-alt"></i>
-      9º BATALHÃO DE POLÍCIA MILITAR
+      GERÊNCIA DE AVIAÇÃO DE ESTADO — RO
     </div>
     <div class="drone-icon">🚁</div>
     <div class="title-drone">R<span>P</span>AS</div>
-    <div class="subtitle">Sistema de Controle de Aeronaves Remotamente Tripuladas</div>
+    <div class="subtitle">Gerência de Aviação de Estado de Rondônia</div>
   </div>
 
   <div class="card">
@@ -394,7 +409,10 @@
         <label>Senha</label>
         <div class="input-wrap">
           <i class="fas fa-key"></i>
-          <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password">
+          <input type="password" id="senha" placeholder="••••••••" autocomplete="current-password" style="padding-right:40px">
+          <button type="button" class="toggle-senha" id="btnOlho" onclick="toggleSenha()" tabindex="-1" aria-label="Mostrar/ocultar senha">
+            <i class="fas fa-eye" id="iconeOlho"></i>
+          </button>
         </div>
       </div>
 
@@ -419,7 +437,7 @@
   </div>
 
   <div class="footer">
-    RPAS CONTROL SYSTEM v1.0 &nbsp;|&nbsp; 9º BPM &nbsp;|&nbsp;
+    RPAS CONTROL SYSTEM v1.0 &nbsp;|&nbsp; GAE/RO &nbsp;|&nbsp;
     <span id="relogio"></span>
   </div>
 </div>
@@ -506,6 +524,19 @@
     el.style.display = 'none';
     void el.offsetWidth;
     el.classList.add('erro');
+  }
+
+  function toggleSenha() {
+    const input = document.getElementById('senha');
+    const icone = document.getElementById('iconeOlho');
+    if (input.type === 'password') {
+      input.type = 'text';
+      icone.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+      input.type = 'password';
+      icone.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+    input.focus();
   }
 
   function iniciarBloqueio() {
