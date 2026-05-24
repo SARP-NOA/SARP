@@ -490,20 +490,23 @@
       });
       const json = await resp.json();
 
-      if (json.ok && json.data && json.data.ok) {
+      // _jsonOk() retorna { ok: true, data: { ok: true, token, usuario, perfil } }
+      const d = json.data || {};
+      if (json.ok && d.ok && d.token) {
         // Sucesso
-        localStorage.setItem('drone_token',   json.data.data.token);
-        localStorage.setItem('drone_usuario', json.data.data.usuario);
-        localStorage.setItem('drone_perfil',  json.data.data.perfil);
+        localStorage.setItem('drone_token',   d.token);
+        localStorage.setItem('drone_usuario', d.usuario || usuario);
+        localStorage.setItem('drone_perfil',  d.perfil  || 'OPERADOR');
         tentativas = 0;
         window.location.href = 'admin.html';
       } else {
         tentativas++;
         const restantes = MAX_TENTATIVAS - tentativas;
+        const msgFalha = d.erro || d.mensagem || 'Credenciais inválidas.';
         if (tentativas >= MAX_TENTATIVAS) {
           iniciarBloqueio();
         } else {
-          mostrarErro((json.data && json.data.erro) || 'Credenciais inválidas.');
+          mostrarErro(msgFalha);
           const el = document.getElementById('tentativas');
           el.style.display = 'block';
           el.textContent = `Tentativas restantes: ${restantes}`;
