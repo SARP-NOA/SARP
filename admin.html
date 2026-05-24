@@ -1006,22 +1006,9 @@
   (function verificarAuth() {
     if (!token) {
       window.location.replace('./login.html');
-      return;
     }
-    // Valida o token na API; se inválido, redireciona.
-    // Usa GET simples (sem preflight CORS). Em caso de falha de rede,
-    // mantém o acesso para não derrubar usuários por instabilidade.
-    fetch(`${API_URL}?acao=verificarToken&token=${encodeURIComponent(token)}`)
-      .then(r => r.json())
-      .then(j => {
-        const valido = j && j.ok && j.data && j.data.valido;
-        if (valido === false) {          // só redireciona se a API explicitamente diz inválido
-          localStorage.clear();
-          window.location.replace('./login.html');
-        }
-        // valido===true → OK; j.data.valido===undefined → dúvida → mantém
-      })
-      .catch(() => { /* falha de rede — mantém sessão local */ });
+    // Token presente no localStorage → permite acesso.
+    // A segurança real é garantida pelo backend ao executar ações admin.
   })();
 
   // ── Relógio ──────────────────────────────
