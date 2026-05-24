@@ -6,7 +6,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#0a0f1e">
-  <title>RPAS — 9º BPM | Painel Admin</title>
+  <title>GERÊNCIA DE AVIAÇÃO DE ESTADO — RO</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -998,93 +998,72 @@
 </div>
 
 <script src="config.js"></script>
+
+<!-- Toast de notificação -->
 <style>
-  #toast-container {
-    position: fixed; bottom: 24px; right: 24px;
-    z-index: 9999; display: flex; flex-direction: column; gap: 10px;
-  }
-  .toast {
-    background: #1a2640; border: 1px solid var(--border);
-    color: var(--text); padding: 12px 18px; border-radius: 10px;
-    font-family: var(--font-mono); font-size: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    display: flex; align-items: center; gap: 10px;
-    animation: slideIn 0.3s ease;
-    min-width: 260px;
-  }
-  .toast.ok    { border-color: var(--green); }
-  .toast.erro  { border-color: var(--red); }
-  .toast.info  { border-color: var(--accent); }
-  @keyframes slideIn {
-    from { transform: translateX(60px); opacity: 0; }
-    to   { transform: translateX(0);    opacity: 1; }
-  }
+  #toast-container { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:10px; pointer-events:none; }
+  .toast { background:#111827; border-left:4px solid var(--green); color:var(--text); padding:14px 18px; border-radius:10px; font-family:var(--font-mono); font-size:12px; box-shadow:0 4px 24px rgba(0,0,0,0.6); display:flex; align-items:center; gap:10px; min-width:280px; animation:toastIn .3s ease; }
+  .toast.erro  { border-color:var(--red); }
+  .toast.info  { border-color:var(--accent); }
+  @keyframes toastIn { from{transform:translateX(80px);opacity:0} to{transform:translateX(0);opacity:1} }
 </style>
 <div id="toast-container"></div>
+
 <script>
   const API_URL = RPAS_CONFIG.API_URL;
   const token   = localStorage.getItem('drone_token') || '';
 
-  // ── Toast ──────────────────────────────────────────────────────────
-  function showToast(msg, tipo = 'ok', duracao = 4000) {
+  // ── Proteção de rota ──────────────────────────────────────────────
+  (function verificarAuth() {
+    if (!token) window.location.replace('./login.html');
+  })();
+
+  // ── Toast ─────────────────────────────────────────────────────────
+  function showToast(msg, tipo = 'ok', dur = 4000) {
     const ic  = tipo === 'ok' ? '✅' : tipo === 'erro' ? '❌' : 'ℹ️';
     const el  = document.createElement('div');
     el.className = `toast ${tipo}`;
-    el.innerHTML = `<span>${ic}</span><span>${msg}</span>`;
+    el.innerHTML = `<span style="font-size:16px">${ic}</span><span>${msg}</span>`;
     document.getElementById('toast-container').appendChild(el);
-    setTimeout(() => el.remove(), duracao);
+    setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .4s'; setTimeout(()=>el.remove(),400); }, dur);
   }
 
-  // ── POST robusto ao Apps Script (resolve CORS) ─────────────────────
-  // Apps Script retorna JSON mesmo com Content-Type text/plain no POST.
-  // Se a leitura da resposta falhar por opaque response, faz GET de verificação.
+  // ── POST ao Apps Script ───────────────────────────────────────────
+  // Apps Script em modo "Anyone" retorna JSON mesmo do GitHub Pages.
+  // Content-Type: text/plain evita preflight CORS.
   async function postAPI(payload) {
     const resp = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload)
     });
-    try {
-      const json = await resp.json();
-      return json;
-    } catch(e) {
-      // Resposta opaca (CORS) — considera sucesso e verifica via GET
-      return { ok: true, data: {} };
+    // Apps Script às vezes retorna 302 redirect internamente.
+    // Tenta ler JSON; se falhar, assume sucesso (dado já foi gravado na planilha).
+    try { return await resp.json(); } catch(e) { return { ok: true, data: {} }; }
+  }
+
+  // ── Polling: recarrega até o dado aparecer ou timeout ─────────────
+  async function aguardarERecarregar(fn, verificacao, tentativas = 6, intervalo = 2000) {
+    for (let i = 0; i < tentativas; i++) {
+      await new Promise(r => setTimeout(r, intervalo));
+      await fn();
+      if (verificacao && verificacao()) return;
     }
   }
 
-  // ── Proteção de rota — redireciona para login se não autenticado ──
-  (function verificarAuth() {
-    if (!token) {
-      window.location.replace('./login.html');
-    }
-    // Token presente no localStorage → permite acesso.
-    // A segurança real é garantida pelo backend ao executar ações admin.
-  })();
-
-  // ── Relógio ──────────────────────────────
+  // ── Relógio ───────────────────────────────────────────────────────
   function tick() { document.getElementById('hora').textContent = new Date().toLocaleTimeString('pt-BR'); }
   setInterval(tick, 1000); tick();
 
-  // ── Roteamento de abas ───────────────────
+  // ── Roteamento de abas ────────────────────────────────────────────
   function irAba(aba, el) {
     document.querySelectorAll('.aba-content').forEach(a => a.classList.remove('ativa'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('ativo'));
-
     const conteudo = document.getElementById(`aba-${aba}`);
     if (conteudo) conteudo.classList.add('ativa');
     if (el) el.classList.add('ativo');
-
-    const titulos = {
-      dashboard: '🚁 DASHBOARD',
-      alertas:   '🔔 ALERTAS DE BATERIAS',
-      aeronaves: '🚁 AERONAVES',
-      baterias:  '🔋 BATERIAS',
-      entradas:  '✅ ENTRADAS (PRÉ-VOO)',
-      saidas:    '🛬 SAÍDAS (PÓS-VOO)'
-    };
+    const titulos = { dashboard:'🚁 DASHBOARD', alertas:'🔔 ALERTAS DE BATERIAS', aeronaves:'🚁 AERONAVES', baterias:'🔋 BATERIAS', entradas:'✅ ENTRADAS (PRÉ-VOO)', saidas:'🛬 SAÍDAS (PÓS-VOO)' };
     document.getElementById('topbarTitle').textContent = titulos[aba] || 'RPAS ADMIN';
-
     fecharSidebar();
     carregarAba(aba);
   }
@@ -1100,32 +1079,29 @@
     }
   }
 
-  // ── Dashboard ────────────────────────────
+  // ── Dashboard ─────────────────────────────────────────────────────
   async function carregarDashboard() {
     try {
       const resp = await fetch(`${API_URL}?action=getDashboard`);
       const json = await resp.json();
       if (!json.ok) return;
       const d = json.data;
-
       document.getElementById('cr-aeronaves').textContent = d.resumo.aeronavesAtivas;
       document.getElementById('cr-emvoo').textContent     = d.resumo.aeronavesEmVoo;
       document.getElementById('cr-baterias').textContent  = d.resumo.totalBaterias;
       document.getElementById('cr-alertas').textContent   = d.resumo.bateriasAlerta;
-
       if (d.resumo.bateriasAlerta > 0) {
         const badge = document.getElementById('badgeAlerta');
         document.getElementById('qtdAlertasBadge').textContent = d.resumo.bateriasAlerta;
         badge.classList.add('visivel');
       }
-
       renderRegistros('listaEntradas', d.ultimasEntradas, 'entrada');
       renderRegistros('listaSaidas',   d.ultimasSaidas,   'saida');
-    } catch(e) { console.error(e); }
+    } catch(e) { console.error('[dashboard]', e); }
   }
 
   function renderRegistros(containerId, lista, tipo) {
-    const el  = document.getElementById(containerId);
+    const el = document.getElementById(containerId);
     if (!lista || lista.length === 0) {
       el.innerHTML = `<div class="vazio"><i class="fas fa-inbox"></i><p>Nenhum registro</p></div>`;
       return;
@@ -1142,29 +1118,25 @@
     `).join('');
   }
 
-  // ── Alertas ──────────────────────────────
+  // ── Alertas ───────────────────────────────────────────────────────
   async function carregarAlertas() {
     const el = document.getElementById('alertasLista');
-    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-dim);">Carregando...</div>';
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-dim);">⏳ Carregando...</div>';
     try {
       const resp = await fetch(`${API_URL}?action=getBateriasAlerta`);
       const json = await resp.json();
       const lista = json.data || [];
-
       if (lista.length === 0) {
         el.innerHTML = `<div class="vazio"><i class="fas fa-check-circle" style="color:var(--green);opacity:1;"></i><p>Nenhuma bateria em alerta</p></div>`;
         return;
       }
-
-      const icones = { CRITICO: '🔴', URGENTE: '🟠', ATENCAO: '🟡' };
+      const icones = { CRITICO:'🔴', URGENTE:'🟠', ATENCAO:'🟡' };
       el.innerHTML = lista.map(a => `
         <div class="alerta-item ${a.nivel}">
           <div class="alerta-icone">${icones[a.nivel] || '⚠️'}</div>
           <div class="alerta-info">
             <div class="alerta-serial">🔋 ${a.serial}</div>
-            <div class="alerta-detalhe">
-              ${a.modelo} · ${a.ciclos}/${a.limite} ciclos · <strong>${a.restantes} restantes</strong>
-            </div>
+            <div class="alerta-detalhe">${a.modelo} · ${a.ciclos}/${a.limite} ciclos · <strong>${a.restantes} restantes</strong></div>
           </div>
           <div class="alerta-nivel">${a.nivel}</div>
         </div>
@@ -1174,44 +1146,45 @@
 
   async function verificarAlertas() {
     try {
-      await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ acao: 'verificarAlertas', token })
-      });
+      await postAPI({ acao: 'verificarAlertas', token });
       await carregarAlertas();
     } catch(e) {}
   }
 
-  // ── Aeronaves ────────────────────────────
+  // ── Aeronaves ─────────────────────────────────────────────────────
+  let _ultimaListaAeronaves = [];
+
   async function carregarAeronaves() {
     const tbody = document.getElementById('tbodyAeronaves');
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:30px;">⏳ Carregando...</td></tr>`;
     try {
       const resp = await fetch(`${API_URL}?action=getAeronaves`);
       const json = await resp.json();
-      const lista = json.data || [];
+      const lista = (json.ok && json.data) ? json.data : [];
+      _ultimaListaAeronaves = lista;
 
       if (lista.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:30px;">Nenhuma aeronave cadastrada</td></tr>`;
         return;
       }
-
       tbody.innerHTML = lista.map(a => `
         <tr>
-          <td><strong>${a.prefixo || '—'}</strong></td>
+          <td><strong>${a.prefixo || a.id || '—'}</strong></td>
           <td>${a.modelo || '—'}</td>
           <td><span style="font-family:var(--font-mono);font-size:11px;">${a.serial || '—'}</span></td>
           <td><span class="badge ${a.status === 'ATIVA' ? 'badge-ativa' : 'badge-inativa'}">${a.status}</span></td>
           <td>
             <div class="tbl-actions">
-              <button class="btn-tbl" onclick="editarAeronave('${a.id}')" title="Editar"><i class="fas fa-pencil"></i></button>
-              <button class="btn-tbl danger" onclick="desativarAeronave('${a.id}')" title="Desativar"><i class="fas fa-power-off"></i></button>
+              <button class="btn-tbl" onclick="editarAeronave('${a.prefixo || a.id}')" title="Editar"><i class="fas fa-pencil"></i></button>
+              <button class="btn-tbl danger" onclick="desativarAeronave('${a.prefixo || a.id}')" title="Desativar"><i class="fas fa-power-off"></i></button>
             </div>
           </td>
         </tr>
       `).join('');
-    } catch(e) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--red);padding:20px;">Erro ao carregar.</td></tr>`; }
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--red);padding:20px;">❌ Erro ao carregar. Verifique a conexão.</td></tr>`;
+      console.error('[aeronaves]', e);
+    }
   }
 
   function abrirModalAeronave() {
@@ -1226,11 +1199,13 @@
 
   async function salvarAeronave() {
     const prefixo = document.getElementById('ma-prefixo').value.trim();
-    const modelo  = document.getElementById('ma-modelo').value;
-    if (!prefixo || !modelo) return showToast('Prefixo e modelo são obrigatórios.', 'erro');
+    const modelo  = document.getElementById('ma-modelo').value.trim();
+    if (!prefixo) return showToast('Informe o prefixo/nome da aeronave.', 'erro');
+    if (!modelo)  return showToast('Selecione o modelo da aeronave.', 'erro');
 
     const btn = document.querySelector('#modalAeronave .btn-salvar');
-    btn.textContent = 'SALVANDO…'; btn.disabled = true;
+    const txtOriginal = btn.textContent;
+    btn.textContent = '⏳ SALVANDO…'; btn.disabled = true;
 
     try {
       const json = await postAPI({
@@ -1238,68 +1213,100 @@
         serial:    document.getElementById('ma-serial').value.trim(),
         descricao: document.getElementById('ma-descricao').value.trim()
       });
+
       fecharModal('modalAeronave');
-      showToast(json.data?.mensagem || `Aeronave "${prefixo}" salva com sucesso!`, 'ok');
-      // Aguarda 1,5 s para o Apps Script confirmar e então recarrega
-      await new Promise(r => setTimeout(r, 1500));
-      await carregarAeronaves();
+
+      const msg = (json.ok && json.data && json.data.mensagem)
+        ? json.data.mensagem
+        : `Aeronave "${prefixo}" enviada! Aguardando confirmação...`;
+      showToast(msg, 'info');
+
+      // Polling: tenta até 6x com 2s de intervalo para confirmar que apareceu
+      let confirmado = false;
+      for (let i = 0; i < 6; i++) {
+        await new Promise(r => setTimeout(r, 2000));
+        await carregarAeronaves();
+        const encontrou = _ultimaListaAeronaves.some(a =>
+          (a.prefixo || a.id || '').toUpperCase() === prefixo.toUpperCase()
+        );
+        if (encontrou) {
+          showToast(`✔ Aeronave "${prefixo}" confirmada na planilha!`, 'ok');
+          confirmado = true;
+          break;
+        }
+      }
+      if (!confirmado) {
+        showToast('Dados enviados. Recarregue se não aparecer.', 'info');
+        await carregarAeronaves();
+      }
     } catch(e) {
-      showToast('Erro ao salvar aeronave: ' + e.message, 'erro');
+      showToast('Erro ao salvar: ' + e.message, 'erro');
+      console.error('[salvarAeronave]', e);
     } finally {
-      btn.textContent = 'SALVAR'; btn.disabled = false;
+      btn.textContent = txtOriginal; btn.disabled = false;
     }
   }
 
   async function desativarAeronave(id) {
     if (!confirm('Desativar esta aeronave?')) return;
-    await postAPI({ acao: 'desativarAeronave', token, id });
-    showToast('Aeronave desativada.', 'info');
-    await new Promise(r => setTimeout(r, 1500));
-    await carregarAeronaves();
+    try {
+      await postAPI({ acao: 'desativarAeronave', token, id });
+      showToast('Aeronave desativada.', 'info');
+      await new Promise(r => setTimeout(r, 2000));
+      await carregarAeronaves();
+    } catch(e) { showToast('Erro ao desativar.', 'erro'); }
   }
 
-  function editarAeronave(id) { /* Implementar conforme necessidade */ }
+  function editarAeronave(id) {
+    showToast('Edição: clique em Nova Aeronave e cadastre novamente com os dados corretos.', 'info', 6000);
+  }
 
-  // ── Baterias ─────────────────────────────
+  // ── Baterias ──────────────────────────────────────────────────────
+  let _ultimaListaBaterias = [];
+
   async function carregarBaterias() {
     const tbody = document.getElementById('tbodyBaterias');
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:30px;">⏳ Carregando...</td></tr>`;
     try {
       const resp = await fetch(`${API_URL}?action=getBaterias`);
       const json = await resp.json();
-      const lista = json.data || [];
+      const lista = (json.ok && json.data) ? json.data : [];
+      _ultimaListaBaterias = lista;
 
       if (lista.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:30px;">Nenhuma bateria cadastrada</td></tr>`;
         return;
       }
-
       tbody.innerHTML = lista.map(b => {
-        const pct  = Math.min(100, Math.round((b.ciclos / b.limite) * 100));
-        const cor  = b.nivel === 'CRITICO' ? 'var(--red)' : b.nivel === 'URGENTE' ? 'var(--orange)' : b.nivel === 'ATENCAO' ? 'var(--gold)' : 'var(--green)';
-        const cls  = `badge-${(b.nivel || 'normal').toLowerCase()}`;
+        const pct = Math.min(100, Math.round(((b.ciclos || 0) / (b.limite || 300)) * 100));
+        const cor = b.nivel === 'CRITICO' ? 'var(--red)' : b.nivel === 'URGENTE' ? 'var(--orange)' : b.nivel === 'ATENCAO' ? 'var(--gold)' : 'var(--green)';
+        const cls = `badge-${(b.nivel || 'normal').toLowerCase()}`;
         return `
           <tr>
-            <td><strong style="font-family:var(--font-mono);">${b.serial}</strong></td>
+            <td><strong style="font-family:var(--font-mono);">${b.serial || '—'}</strong></td>
             <td>${b.modelo_aeronave || '—'}</td>
             <td>
               <div class="ciclos-bar">
                 <div class="bar-track">
                   <div class="bar-fill" style="width:${pct}%;background:${cor};"></div>
                 </div>
-                <span class="bar-txt">${b.ciclos}/${b.limite}</span>
+                <span class="bar-txt">${b.ciclos || 0}/${b.limite || 300}</span>
               </div>
             </td>
             <td><span class="badge ${cls}">${b.nivel || 'NORMAL'}</span></td>
             <td>
               <div class="tbl-actions">
                 <button class="btn-tbl success" onclick="resetarCiclos('${b.serial}')" title="Resetar ciclos"><i class="fas fa-redo"></i></button>
-                <button class="btn-tbl danger" onclick="desativarBateria('${b.serial}')" title="Desativar"><i class="fas fa-ban"></i></button>
+                <button class="btn-tbl danger"  onclick="desativarBateria('${b.serial}')" title="Desativar"><i class="fas fa-ban"></i></button>
               </div>
             </td>
           </tr>
         `;
       }).join('');
-    } catch(e) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--red);padding:20px;">Erro ao carregar.</td></tr>`; }
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--red);padding:20px;">❌ Erro ao carregar.</td></tr>`;
+      console.error('[baterias]', e);
+    }
   }
 
   function abrirModalBateria() {
@@ -1312,11 +1319,13 @@
 
   async function salvarBateria() {
     const serial = document.getElementById('mb-serial').value.trim();
-    const modelo = document.getElementById('mb-modelo').value;
-    if (!serial || !modelo) return showToast('Série e modelo são obrigatórios.', 'erro');
+    const modelo = document.getElementById('mb-modelo').value.trim();
+    if (!serial) return showToast('Informe o Nº de série da bateria.', 'erro');
+    if (!modelo) return showToast('Selecione o modelo da aeronave.', 'erro');
 
     const btn = document.querySelector('#modalBateria .btn-salvar');
-    btn.textContent = 'SALVANDO…'; btn.disabled = true;
+    const txtOriginal = btn.textContent;
+    btn.textContent = '⏳ SALVANDO…'; btn.disabled = true;
 
     try {
       const json = await postAPI({
@@ -1325,42 +1334,70 @@
         limite_personalizado: parseInt(document.getElementById('mb-limite').value) || null,
         ciclos_iniciais:      parseInt(document.getElementById('mb-ciclos').value) || 0
       });
+
       fecharModal('modalBateria');
-      showToast(json.data?.mensagem || `Bateria "${serial}" salva com sucesso!`, 'ok');
-      await new Promise(r => setTimeout(r, 1500));
-      await carregarBaterias();
+
+      const msg = (json.ok && json.data && json.data.mensagem)
+        ? json.data.mensagem
+        : `Bateria "${serial}" enviada! Aguardando confirmação...`;
+      showToast(msg, 'info');
+
+      // Polling: confirma que apareceu na planilha
+      let confirmado = false;
+      for (let i = 0; i < 6; i++) {
+        await new Promise(r => setTimeout(r, 2000));
+        await carregarBaterias();
+        const encontrou = _ultimaListaBaterias.some(b =>
+          (b.serial || '').toUpperCase() === serial.toUpperCase()
+        );
+        if (encontrou) {
+          showToast(`✔ Bateria "${serial}" confirmada na planilha!`, 'ok');
+          confirmado = true;
+          break;
+        }
+      }
+      if (!confirmado) {
+        showToast('Dados enviados. Recarregue se não aparecer.', 'info');
+        await carregarBaterias();
+      }
     } catch(e) {
-      showToast('Erro ao salvar bateria: ' + e.message, 'erro');
+      showToast('Erro ao salvar: ' + e.message, 'erro');
+      console.error('[salvarBateria]', e);
     } finally {
-      btn.textContent = 'SALVAR'; btn.disabled = false;
+      btn.textContent = txtOriginal; btn.disabled = false;
     }
   }
 
   async function desativarBateria(serial) {
     if (!confirm(`Desativar bateria ${serial}?`)) return;
-    await postAPI({ acao: 'desativarBateria', token, serial });
-    showToast('Bateria desativada.', 'info');
-    await new Promise(r => setTimeout(r, 1500));
-    await carregarBaterias();
+    try {
+      await postAPI({ acao: 'desativarBateria', token, serial });
+      showToast('Bateria desativada.', 'info');
+      await new Promise(r => setTimeout(r, 2000));
+      await carregarBaterias();
+    } catch(e) { showToast('Erro ao desativar.', 'erro'); }
   }
 
   async function resetarCiclos(serial) {
     const motivo = prompt(`Motivo para resetar os ciclos da bateria ${serial}:`);
     if (!motivo) return;
-    await postAPI({ acao: 'resetarCiclosBateria', token, serial, motivo });
-    showToast(`Ciclos da bateria ${serial} resetados.`, 'ok');
-    await new Promise(r => setTimeout(r, 1500));
-    await carregarBaterias();
+    try {
+      await postAPI({ acao: 'resetarCiclosBateria', token, serial, motivo });
+      showToast(`Resetando ciclos de ${serial}...`, 'info');
+      await new Promise(r => setTimeout(r, 2000));
+      await carregarBaterias();
+      showToast(`Ciclos de ${serial} resetados!`, 'ok');
+    } catch(e) { showToast('Erro ao resetar.', 'erro'); }
   }
 
-  // ── Entradas e Saídas ────────────────────
+  // ── Entradas ──────────────────────────────────────────────────────
   async function carregarEntradas() {
     const tbody = document.getElementById('tbodyEntradas');
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:30px;">⏳ Carregando...</td></tr>`;
     try {
       const resp = await fetch(`${API_URL}?action=getEntradas&limit=30`);
       const json = await resp.json();
-      const lista = json.data || [];
-
+      const lista = (json.ok && json.data) ? json.data : [];
       tbody.innerHTML = lista.length === 0
         ? `<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:30px;">Nenhum registro</td></tr>`
         : lista.map(r => `
@@ -1373,20 +1410,21 @@
               <td>${r.local || '—'}</td>
             </tr>
           `).join('');
-    } catch(e) {}
+    } catch(e) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--red);padding:20px;">❌ Erro ao carregar.</td></tr>`; }
   }
 
+  // ── Saídas ────────────────────────────────────────────────────────
   async function carregarSaidas() {
     const tbody = document.getElementById('tbodySaidas');
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:30px;">⏳ Carregando...</td></tr>`;
     try {
       const resp = await fetch(`${API_URL}?action=getSaidas&limit=30`);
       const json = await resp.json();
-      const lista = json.data || [];
-
+      const lista = (json.ok && json.data) ? json.data : [];
       tbody.innerHTML = lista.length === 0
         ? `<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:30px;">Nenhum registro</td></tr>`
         : lista.map(r => {
-            const av = { Excelente: '🟢', Bom: '🔵', Regular: '🟡', Ruim: '🔴' };
+            const av = { Excelente:'🟢', Bom:'🔵', Regular:'🟡', Ruim:'🔴' };
             return `
               <tr>
                 <td><span style="font-family:var(--font-mono);font-size:11px;">${r.timestamp ? new Date(r.timestamp).toLocaleString('pt-BR') : '—'}</span></td>
@@ -1398,18 +1436,16 @@
               </tr>
             `;
           }).join('');
-    } catch(e) {}
+    } catch(e) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--red);padding:20px;">❌ Erro ao carregar.</td></tr>`; }
   }
 
-  // ── Modais ───────────────────────────────
+  // ── Modais ────────────────────────────────────────────────────────
   function fecharModal(id) { document.getElementById(id).classList.remove('ativo'); }
-
-  // Fecha modal clicando fora
   document.querySelectorAll('.modal-overlay').forEach(o => {
     o.addEventListener('click', e => { if (e.target === o) o.classList.remove('ativo'); });
   });
 
-  // ── Sidebar mobile ───────────────────────
+  // ── Sidebar mobile ────────────────────────────────────────────────
   function toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('aberta');
     document.getElementById('overlayMobile').classList.toggle('ativo');
@@ -1426,16 +1462,13 @@
     window.location.href = './login.html';
   }
 
-  // ── Deep link por hash ───────────────────
+  // ── Deep link por hash ────────────────────────────────────────────
   function verificarHash() {
     const h = window.location.hash.replace('#','');
-    if (h) {
-      const navEl = document.querySelector(`[data-aba="${h}"]`);
-      irAba(h, navEl);
-    }
+    if (h) { const navEl = document.querySelector(`[data-aba="${h}"]`); irAba(h, navEl); }
   }
 
-  // ── Init ─────────────────────────────────
+  // ── Init ──────────────────────────────────────────────────────────
   verificarHash();
   carregarDashboard();
   setInterval(carregarDashboard, 60000);
