@@ -510,6 +510,17 @@
       appearance: none;
     }
 
+    .campo-modal select option {
+      background: #1a2540;
+      color: #e8eaf0;
+    }
+
+    .campo-modal select option:checked,
+    .campo-modal select option:hover {
+      background: #1e90ff;
+      color: #ffffff;
+    }
+
     .campo-modal input:focus,
     .campo-modal select:focus {
       border-color: var(--blue);
@@ -990,6 +1001,19 @@
 <script>
   const API_URL = RPAS_CONFIG.API_URL;
   const token   = localStorage.getItem('drone_token') || '';
+
+  // ── Proteção de rota — redireciona para login se não autenticado ──
+  (function verificarAuth() {
+    if (!token) {
+      window.location.replace('login.html');
+      return;
+    }
+    // Valida o token na API; se inválido, redireciona
+    fetch(`${API_URL}?action=verificarToken&token=${encodeURIComponent(token)}`)
+      .then(r => r.json())
+      .then(j => { if (!j.ok || !j.data || !j.data.valido) { localStorage.clear(); window.location.replace('login.html'); } })
+      .catch(() => { /* sem rede — mantém local */ });
+  })();
 
   // ── Relógio ──────────────────────────────
   function tick() { document.getElementById('hora').textContent = new Date().toLocaleTimeString('pt-BR'); }
