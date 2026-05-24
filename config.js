@@ -9,8 +9,8 @@ const RPAS_CONFIG = {
   API_URL: 'https://script.google.com/macros/s/AKfycbxMlxm9eQU8wPbLLUTQssyJG19IK0keRNrr1Wiel1ApdG9X3yrwjoM4ZjAhMMj3MZr4Sg/exec',
 
   // Identificação do sistema (apenas para exibição)
-  unidade:  '9º BPM',
-  secao:    'Seção de Patrimônio e Logística — P4',
+  unidade:  'SARP- NOA',
+  secao:    'GERÊNCIA DE AVIAÇÃO DE ESTADO — RO',
   cidade:   'Porto Velho — RO',
   versao:   '1.0'
 };
