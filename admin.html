@@ -1008,11 +1008,20 @@
       window.location.replace('login.html');
       return;
     }
-    // Valida o token na API; se inválido, redireciona
-    fetch(`${API_URL}?action=verificarToken&token=${encodeURIComponent(token)}`)
+    // Valida o token na API; se inválido, redireciona.
+    // Usa GET simples (sem preflight CORS). Em caso de falha de rede,
+    // mantém o acesso para não derrubar usuários por instabilidade.
+    fetch(`${API_URL}?acao=verificarToken&token=${encodeURIComponent(token)}`)
       .then(r => r.json())
-      .then(j => { if (!j.ok || !j.data || !j.data.valido) { localStorage.clear(); window.location.replace('login.html'); } })
-      .catch(() => { /* sem rede — mantém local */ });
+      .then(j => {
+        const valido = j && j.ok && j.data && j.data.valido;
+        if (valido === false) {          // só redireciona se a API explicitamente diz inválido
+          localStorage.clear();
+          window.location.replace('login.html');
+        }
+        // valido===true → OK; j.data.valido===undefined → dúvida → mantém
+      })
+      .catch(() => { /* falha de rede — mantém sessão local */ });
   })();
 
   // ── Relógio ──────────────────────────────
@@ -1129,7 +1138,7 @@
     try {
       await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ acao: 'verificarAlertas', token })
       });
       await carregarAlertas();
@@ -1184,7 +1193,7 @@
     try {
       await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
           acao: 'addAeronave',
           token,
@@ -1203,7 +1212,7 @@
     if (!confirm('Desativar esta aeronave?')) return;
     await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ acao: 'desativarAeronave', token, id })
     });
     await carregarAeronaves();
@@ -1269,7 +1278,7 @@
     try {
       await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({
           acao: 'addBateria',
           token,
@@ -1288,7 +1297,7 @@
     if (!confirm(`Desativar bateria ${serial}?`)) return;
     await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ acao: 'desativarBateria', token, serial })
     });
     await carregarBaterias();
@@ -1299,7 +1308,7 @@
     if (!motivo) return;
     await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ acao: 'resetarCiclosBateria', token, serial, motivo })
     });
     await carregarBaterias();
