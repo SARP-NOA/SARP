@@ -501,7 +501,7 @@
         localStorage.setItem('drone_usuario', d.usuario || usuario);
         localStorage.setItem('drone_perfil',  d.perfil  || 'OPERADOR');
         tentativas = 0;
-        window.location.href = 'admin.html';
+        window.location.href = './admin.html';
       } else {
         tentativas++;
         const restantes = MAX_TENTATIVAS - tentativas;
@@ -516,7 +516,8 @@
         }
       }
     } catch (e) {
-      mostrarErro('Erro de conexão. Tente novamente.');
+      mostrarErro('Erro de conexão: ' + e.message);
+      console.error('[LOGIN]', e);
     } finally {
       btn.disabled = false;
       document.getElementById('btnTxt').style.display = 'block';
