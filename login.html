@@ -483,9 +483,12 @@
     document.getElementById('spinner').style.display = 'block';
 
     try {
+      // Apps Script não responde a preflight OPTIONS, portanto não usar
+      // Content-Type: application/json (dispara preflight e causa CORS).
+      // Com text/plain a requisição é "simple" — sem preflight — e funciona.
       const resp = await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ acao: 'login', usuario, senha })
       });
       const json = await resp.json();
